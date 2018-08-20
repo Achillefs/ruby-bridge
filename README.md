@@ -1,10 +1,7 @@
 # Bridge
-
-A lean mean bridge playing machine. Initially conceived and built in 2013, this is the heart of https://leobridge.net/
+Bridge is the bridge playing engine sitting behind [Leo Bridge](https://leobridge.net/) this is the first version initially built in 2013 and is shared here as a working game engine example. 
 
 Large portions of this gem have been ported from [pybridge](http://sourceforge.net/projects/pybridge/)
-
-Bridge is the bridge playing engine sitting behind [Leo Bridge](https://leobridge.net/) this is the first version initially built in 2013 and is shared here as a working game engine example. 
 
 ## Installation
 
