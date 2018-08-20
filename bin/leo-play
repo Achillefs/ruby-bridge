@@ -1,0 +1,162 @@
+#!/usr/bin/env ruby
+require './lib/bridge'
+
+[:INT, :TERM].each do |sig|
+  trap(sig) { 
+    puts clear_line
+    puts 'Shutting down, bye!'.yellow
+    exit
+  }
+end
+
+def cursor
+  '> '
+end
+
+def put string, prompt = '> '
+  puts cursor + string
+end
+
+def put_contract c
+  if c
+    #puts c.inspect.red
+    print "#{Direction.name(c.declarer)} won auction with ".yellow
+    print "#{Level.name(c.bid.level)} #{Strain.name(c.bid.strain)}".yellow 
+    print "double by #{Direction.name(c.double_by)}".yellow unless c.double_by.nil?
+    print "redouble by #{Direction.name(c.redouble_by)}".yellow unless c.redouble_by.nil?
+    puts ""
+  end
+end
+
+include Bridge
+@history = []
+@game = Game.new
+@players = []
+Direction.each do |position|
+  @players[position] = @game.add_player(position)
+end
+@game.start!(Board.first)
+
+puts clear_screen
+puts 'Started game on first board'.green
+puts "\t#{Direction.name(@game.board.dealer)} deals".white
+puts "\t#{Vulnerability.name(@game.board.vulnerability)} is vulnerable".white
+
+
+print "#{Direction.name(@game.get_turn).to_s.upcase}> " if @game.in_progress?
+
+def rush_auction
+  @players[@game.get_turn].make_call(Call.from_string('bid two club'))
+  @players[@game.get_turn].make_call(Pass.new)
+  @players[@game.get_turn].make_call(Pass.new)
+  @players[@game.get_turn].make_call(Pass.new)
+  
+  put_contract @game.auction.contract
+end
+
+def rush_trick
+  @players[@game.get_turn].play_card(@players[@game.get_turn].get_hand.sample)
+  
+  3.times do
+    if @game.get_turn == @game.play.dummy
+      player = @players[@game.play.declarer]
+      hand = @players[@game.play.dummy].get_hand
+    else
+      player = @players[@game.get_turn]
+      hand = @players[@game.get_turn].get_hand
+    end
+    
+    begin
+      player.play_card(hand.sample)
+    rescue Bridge::GameError => e
+      puts e.message.red
+      retry
+    end
+    
+  end
+end
+
+while cmd = gets.strip
+  case cmd
+  when 'help'
+    puts "* Available Commands".green
+    puts "`hand` show current player hand"
+    puts "`bid [valid bid]` make an auction bid (e.g. `bid one spade`)"
+    puts "`[card]` play a card while in play (e.g. `AH` or `10S`)"
+    puts "`rush [auction|trick]` fast-forward auction or trick stage"
+    puts "`history` display move history"
+    puts "`undo` undo last auction or trick stage move"
+    print cursor
+  when 'bye','exit','leave'
+    break
+  when 'rush trick' # play an automatic trick
+    rush_auction unless @game.auction.complete?
+    rush_trick
+  when 'rush auction' # play a canned auction
+    rush_auction
+  when 'undo'
+    if @game.undo!
+      put 'OK'.green
+    else
+      put 'Undo unavailable'.yellow
+    end
+  when 'history'
+    put 'Move history:'.yellow
+    put @history.join("\n")
+    
+  when 'hand'
+    put @game.get_hand(@game.get_turn).to_s
+    print cursor
+    
+  else
+    ary = cmd.split
+    if @game.in_progress?
+      position_i = @game.get_turn
+      position = Direction.name(position_i)
+      @history << [position, ary.join(' ')]
+      
+      if @game.auction.complete?
+        card = nil
+        
+        begin
+          if ary.size == 2 # overriding player
+            position = ary.first
+            position_i = Direction.send(position.to_sym)
+            card = Card.from_string(ary.last)
+          else
+            card = Card.from_string(ary.first)
+          end
+          player = if @game.get_turn == @game.play.dummy
+            @players[@game.play.declarer]
+          else
+            @players[position_i]
+          end
+          player.play_card(card)
+          print "#{position.white} plays #{card.to_s.magenta} ~> "
+          puts @game.play.get_current_trick.cards.map(&:to_s).compact.join(' ').white
+        rescue Exception => e
+          put e.message.red
+        end
+      else
+        begin
+          @players[position_i].make_call(Call.from_string(ary.join(' ')))
+          put "#{position.white} calls #{ary.join(' ').green}"
+        rescue Exception => e
+          put e.message.red
+        end
+      
+        if @game.auction.passed_out?
+          put 'Auction phase complete, @game passed out'.red
+          exit
+        elsif @game.auction.complete?
+          put 'Auction phase complete'.yellow
+          put_contract @game.auction.contract
+        end
+      end
+    end # if @game.in_progress?
+  end
+  
+  print "#{Direction.name(@game.get_turn).to_s.upcase}> " if @game.in_progress?
+end
+
+puts 'Shutting down, bye!'.yellow

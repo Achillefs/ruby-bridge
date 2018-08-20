@@ -1,0 +1,8 @@
+#!/usr/bin/env ruby
+libs = ['-rubygems']
+libs << '-r irb/completion'
+libs << '-r pp'
+libs << '-r ./lib/bridge'
+libs << '-r ./bridge.rc.rb'
+
+exec "irb #{libs.join(' ')}"
