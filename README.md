@@ -1,6 +1,8 @@
 # Bridge
 Bridge is the bridge playing engine sitting behind [Leo Bridge](https://leobridge.net/) this is the first version initially built in 2013 and is shared here as a working game engine example. 
 
+You can use it to experiment with building a card game UI, or however else you wish. 
+
 Large portions of this gem have been ported from [pybridge](http://sourceforge.net/projects/pybridge/)
 
 ## Installation
@@ -8,7 +10,7 @@ Large portions of this gem have been ported from [pybridge](http://sourceforge.n
 Add this line to your application's Gemfile:
 
     #!ruby
-    gem 'bridge'
+    gem 'leonardo-bridge', require: 'bridge'
 
 And then execute:
     
@@ -16,11 +18,13 @@ And then execute:
 
 Or install it yourself as:
 
-    $ gem install bridge
+    $ gem install leonardo-bridge
 
 ## Usage
 
 You can have a look at `bin/leo-play` for an example of interaction with the Bridge::Game class (type `help` for available commands).
+
+IF you clone the source, you can also run `./bin/leo-play` to try out a rudimentary interactive game (meant as a demo, this is NOT a full bridge game).
 
 
 Here's a quick run-through:
